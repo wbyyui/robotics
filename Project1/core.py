@@ -55,7 +55,7 @@ def rot_inv(R):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
-
+    return R.T
 
 
 def vec_to_so3(omg):
@@ -75,7 +75,13 @@ def vec_to_so3(omg):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return np.array([[ 0, -omg[2],  omg[1]],
+                  [ omg[2],  0, -omg[0]],
+                  [-omg[1],  omg[0],  0]])
 
+
+#omg = np.array([1, 2, 3])
+#print(vec_to_so3(omg))
 
 def so3_to_vec(so3mat):
     """Converts an so(3) representation to a 3-vector
@@ -94,7 +100,11 @@ def so3_to_vec(so3mat):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return np.array([so3mat[2][1], so3mat[0][2], so3mat[1][0]])
 
+
+#so3mat = np.array([[ 0, -3,  2],[ 3,  0, -1],[-2,  1,  0]])
+#print(so3_to_vec(so3mat))
 
 def axis_ang3(expc3):
     """Converts a 3-vector of exponential coordinates for rotation into
@@ -113,7 +123,11 @@ def axis_ang3(expc3):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return (normalize(expc3), np.linalg.norm(expc3))
 
+
+#expc3 = np.array([1, 2, 3])
+#print(axis_ang3(expc3))
 
 def matrix_exp3(so3mat):
     """Computes the matrix exponential of a matrix in so(3)
@@ -134,6 +148,11 @@ def matrix_exp3(so3mat):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    theta = axis_ang3(so3_to_vec(so3mat))[1]
+    return (np.identity(3) + (np.sin(theta)/theta)*so3mat + (2*np.sin(theta/2)*np.sin(theta/2)/theta/theta)*(np.matmul(so3mat,so3mat)))
+
+#so3mat = np.array([[ 0, -3,  2], [ 3,  0, -1], [-2,  1,  0]])
+#print(matrix_exp3(so3mat))
 
 
 def matrix_log3(R):
@@ -155,6 +174,11 @@ def matrix_log3(R):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    theta = np.arccos((np.trace(R)-1)/2)
+    return (theta/(2*np.sin(theta))) *(R - R.T)
+
+#R = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+#print(matrix_log3(R))   
 
 
 def rp_to_trans(R, p):
@@ -180,6 +204,12 @@ def rp_to_trans(R, p):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return np.array([
+        [R[0][0], R[0][1], R[0][2], p[0]],
+        [R[1][0], R[1][1], R[1][2], p[1]],
+        [R[2][0], R[2][1], R[2][2], p[2]],
+        [0,0,0,1]
+    ])
 
 
 def trans_to_rp(T):
@@ -205,6 +235,14 @@ def trans_to_rp(T):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return (np.array([
+        [T[0][0], T[0][1], T[0][2]],
+        [T[1][0], T[1][1], T[1][2]],
+        [T[2][0], T[2][1], T[2][2]]
+    ]), np.array([T[0][3],T[1][3],T[2][3]]))
+
+#T = np.array([[1, 0,  0, 0], [0, 0, -1, 0], [0, 1,  0, 3], [0, 0,  0, 1]])
+#print(trans_to_rp(T)[0])
 
 
 def trans_inv(T):
@@ -230,6 +268,10 @@ def trans_inv(T):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return rp_to_trans(trans_to_rp(T)[0].T,np.matmul(((-1)*trans_to_rp(T)[0].T),trans_to_rp(T)[1]))
+
+#T = np.array([[1, 0,  0, 0], [0, 0, -1, 0], [0, 1,  0, 3], [0, 0,  0, 1]])
+#print(trans_inv(T))
 
 
 def vec_to_se3(V):
@@ -250,6 +292,11 @@ def vec_to_se3(V):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    R = vec_to_so3(np.array(V[0:3]))
+    return rp_to_trans(R, np.array(V[3:6]))
+
+#V = np.array([1, 2, 3, 4, 5, 6])
+#print(vec_to_se3(V))
 
 
 def se3_to_vec(se3mat):
@@ -270,6 +317,11 @@ def se3_to_vec(se3mat):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return np.array([se3mat[2][1],se3mat[0][2],se3mat[1][0],se3mat[0][3],se3mat[1][3],se3mat[2][3]])
+
+#
+# se3mat = np.array([[ 0, -3,  2, 4], [ 3,  0, -1, 5], [-2,  1,  0, 6], [ 0,  0,  0, 0]])
+#print(se3_to_vec(se3mat))   
 
 
 def adjoint(T):
@@ -296,6 +348,13 @@ def adjoint(T):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    (R,p)=trans_to_rp (T)
+    print(R)
+    print(p)
+    return np.vstack((np.hstack((R,np.zeros((3,3),dtype=int))),np.hstack((np.matmul(vec_to_so3(p),R),R))))
+
+#T = np.array([[1, 0,  0, 0], [0, 0, -1, 0], [0, 1,  0, 3], [0, 0,  0, 1]])
+#print(adjoint(T))
 
 
 def screw_to_axis(q, s, h):
