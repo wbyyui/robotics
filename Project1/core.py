@@ -30,6 +30,8 @@ def normalize(V):
     Output:
         np.array([0.26726124, 0.53452248, 0.80178373])
     """
+    if near_zero(np.linalg.norm(V)):
+        return V
     return V / np.linalg.norm(V)
 
 
@@ -536,7 +538,11 @@ def FK_in_body(M, Blist, thetalist):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
-
+    Blist = Blist.T
+    n = len(thetalist)
+    for i in range(n):
+        M = np.matmul(M,matrix_exp6(vec_to_se3(Blist[i]*thetalist[i])))
+    return M
 
 def FK_in_space(M, Slist, thetalist):
     """Computes forward kinematics in the space frame for an open chain robot
@@ -570,3 +576,16 @@ def FK_in_space(M, Slist, thetalist):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+
+    Slist = Slist.T
+    n = len(thetalist)
+    for i in range(n-1,-1,-1):
+        M = np.matmul(matrix_exp6(vec_to_se3(Slist[i]*thetalist[i])),M)
+    return M
+
+#M = np.array([[-1, 0,  0, 0], [ 0, 1,  0, 6], [ 0, 0, -1, 2],[ 0, 0,  0, 1]])
+#Blist = np.array([[0, 0, -1, 2, 0,   0],[0, 0,  0, 0, 1,   0],[0, 0,  1, 0, 0, 0.1]]).T
+#Slist = np.array([[0, 0,  1,  4, 0,    0],[0, 0,  0,  0, 1,    0],[0, 0, -1, -6, 0, -0.1]]).T
+#thetalist = np.array([np.pi / 2.0, 3, np.pi])
+#print(FK_in_body(M, Blist, thetalist))
+#print(FK_in_space(M, Slist, thetalist))
