@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import numpy as np
+#import scipy as sp
+#from scipy import linalg
 
 
 def near_zero(z):
@@ -149,6 +151,7 @@ def matrix_exp3(so3mat):
     '''----Your Code HERE:----'''
     '''-----------------------'''
     theta = axis_ang3(so3_to_vec(so3mat))[1]
+    if near_zero(theta): return np.identity(3)
     return (np.identity(3) + (np.sin(theta)/theta)*so3mat + (2*np.sin(theta/2)*np.sin(theta/2)/theta/theta)*(np.matmul(so3mat,so3mat)))
 
 #so3mat = np.array([[ 0, -3,  2], [ 3,  0, -1], [-2,  1,  0]])
@@ -175,11 +178,18 @@ def matrix_log3(R):
     '''----Your Code HERE:----'''
     '''-----------------------'''
     theta = np.arccos((np.trace(R)-1)/2)
+    if near_zero(np.sin(theta)):
+        if near_zero(np.cos(theta)-1): return np.zeros((3,3))
+        else:
+            for i in range(0,3):
+                if not (near_zero(R[i][i]+1)):
+                    w = (1/np.sqrt(2*(R[i][i]+1))) * np.array([(int)(0==i) + R[0][i], (int)(1==i) + R[1][i], (int)(2==i) + R[2][i]])
+                    return vec_to_so3(w) * np.pi
     return (theta/(2*np.sin(theta))) *(R - R.T)
 
-#R = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+#R = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 #print(matrix_log3(R))   
-
+#print(scipy.linalg.logm(R))
 
 def rp_to_trans(R, p):
     """Converts a rotation matrix and a position vector into homogeneous
@@ -349,8 +359,7 @@ def adjoint(T):
     '''----Your Code HERE:----'''
     '''-----------------------'''
     (R,p)=trans_to_rp (T)
-    print(R)
-    print(p)
+    #print(R)#print(p)
     return np.vstack((np.hstack((R,np.zeros((3,3),dtype=int))),np.hstack((np.matmul(vec_to_so3(p),R),R))))
 
 #T = np.array([[1, 0,  0, 0], [0, 0, -1, 0], [0, 1,  0, 3], [0, 0,  0, 1]])
@@ -377,7 +386,12 @@ def screw_to_axis(q, s, h):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    return np.hstack((s,np.cross(-1*s,q)+h*s))
 
+#q = np.array([3, 0, 0])
+#s = np.array([0, 0, 1])
+#h = 2
+#print(screw_to_axis(q, s, h))
 
 def axis_ang6(expc6):
     """Converts a 6-vector of exponential coordinates into screw axis-angle
@@ -397,6 +411,12 @@ def axis_ang6(expc6):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    theta = np.linalg.norm(expc6[0:3])
+    if near_zero(theta): theta = np.linalg.norm(expc6[3:6])
+    return (expc6/theta,theta)
+
+#expc6 = np.array([1, 0, 1, 1, 2, 3])
+#print(axis_ang6(expc6))
 
 
 def matrix_exp6(se3mat):
@@ -444,6 +464,20 @@ def matrix_log6(T):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+    R,p = trans_to_rp(T)
+    theta = np.arccos((np.trace(R)-1)/2)
+    omega = (theta/(2*np.sin(theta))) *(R - R.T)
+    InvG = (np.identity(3) - omega/2 + ((1/theta - 1/(2*np.tan(theta/2))))/theta*np.matmul(omega,omega))
+    #Here the InvG given by PPT may be with some typos
+    v = np.matmul(InvG, p)
+    #return sp.linalg.logm(T)
+    tmp = vec_to_se3(np.hstack((so3_to_vec(omega),v)))
+    tmp[3][3] = 0
+    return tmp
+
+T = np.array([[1, 0,  0, 0], [0, 0, -1, 0], [0, 1,  0, 3], [0, 0,  0, 1]])
+print(matrix_log6(T))
+
 
 
 '''
