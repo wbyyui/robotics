@@ -154,7 +154,7 @@ def matrix_exp3(so3mat):
     if near_zero(theta): return np.identity(3)
     return (np.identity(3) + (np.sin(theta)/theta)*so3mat + (2*np.sin(theta/2)*np.sin(theta/2)/theta/theta)*(np.matmul(so3mat,so3mat)))
 
-#so3mat = np.array([[ 0, -3,  2], [ 3,  0, -1], [-2,  1,  0]])
+#so3mat = np.array([[ 0, 0,  0], [ 0,  0, -1.57], [0,  1.57,  0]])
 #print(matrix_exp3(so3mat))
 
 
@@ -303,7 +303,9 @@ def vec_to_se3(V):
     '''----Your Code HERE:----'''
     '''-----------------------'''
     R = vec_to_so3(np.array(V[0:3]))
-    return rp_to_trans(R, np.array(V[3:6]))
+    se3mat = rp_to_trans(R, np.array(V[3:6]))
+    se3mat[3][3] = 0
+    return se3mat
 
 #V = np.array([1, 2, 3, 4, 5, 6])
 #print(vec_to_se3(V))
@@ -329,8 +331,8 @@ def se3_to_vec(se3mat):
     '''-----------------------'''
     return np.array([se3mat[2][1],se3mat[0][2],se3mat[1][0],se3mat[0][3],se3mat[1][3],se3mat[2][3]])
 
-#
-# se3mat = np.array([[ 0, -3,  2, 4], [ 3,  0, -1, 5], [-2,  1,  0, 6], [ 0,  0,  0, 0]])
+
+#se3mat = np.array([[ 0, -3,  2, 4], [ 3,  0, -1, 5], [-2,  1,  0, 6], [ 0,  0,  0, 0]])
 #print(se3_to_vec(se3mat))   
 
 
@@ -442,6 +444,19 @@ def matrix_exp6(se3mat):
     '''----Your Code HERE:----'''
     '''-----------------------'''
 
+    #print(sp.linalg.expm(T))
+
+    w = se3mat[0:3, 0:3]
+    theta = axis_ang3(so3_to_vec(w))[1]
+    if near_zero(theta): return (rp_to_trans(np.identity(3),se3mat[0:3, 3]))
+
+    w = w / theta
+    R = matrix_exp3(se3mat[0:3, 0:3])
+    G = theta*np.identity(3) + (1-np.cos(theta))*w + (theta - np.sin(theta)) * np.matmul(w,w)
+    return rp_to_trans(R,np.matmul(G,se3mat[0:3, 3]/theta))
+    
+#se3mat = np.array([[0,0,0,0],[0,0,-1.57079632,2.35619449],[0,1.57079632,0, 2.35619449],[0,0,0,0]])
+#print(matrix_exp6(se3mat))
 
 def matrix_log6(T):
     """Computes the matrix logarithm of a homogeneous transformation matrix
@@ -464,19 +479,23 @@ def matrix_log6(T):
     '''-----------------------'''
     '''----Your Code HERE:----'''
     '''-----------------------'''
+
+    #print(sp.linalg.logm(T))
+
     R,p = trans_to_rp(T)
     theta = np.arccos((np.trace(R)-1)/2)
-    omega = (theta/(2*np.sin(theta))) *(R - R.T)
+    omega = matrix_log3(R)
+
+    if near_zero(np.linalg.norm(omega)):
+        return vec_to_se3(np.hstack((so3_to_vec(omega),p)))
+    
     InvG = (np.identity(3) - omega/2 + ((1/theta - 1/(2*np.tan(theta/2))))/theta*np.matmul(omega,omega))
     #Here the InvG given by PPT may be with some typos
-    v = np.matmul(InvG, p)
-    #return sp.linalg.logm(T)
-    tmp = vec_to_se3(np.hstack((so3_to_vec(omega),v)))
-    tmp[3][3] = 0
-    return tmp
 
-T = np.array([[1, 0,  0, 0], [0, 0, -1, 0], [0, 1,  0, 3], [0, 0,  0, 1]])
-print(matrix_log6(T))
+    return vec_to_se3(np.hstack((so3_to_vec(omega),np.matmul(InvG, p))))
+
+#T = np.array([[1, 0,  0, 0], [0, 0, -1, 0], [0, 1, 0, 3], [0, 0, 0, 1]])
+#print(matrix_log6(T))
 
 
 
