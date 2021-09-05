@@ -111,7 +111,8 @@ class pandaEnv():
         # self.load_bin(bin_pose=[0.4, 0.3, 0.005 / 2], rgba_color=[0, 0, 1, 1])
         # self.load_lego()
         flags = p.URDF_ENABLE_CACHED_GRAPHICS_SHAPES | p.URDF_USE_INERTIA_FROM_FILE | p.URDF_USE_SELF_COLLISION
-        robot_file_path = os.path.join(os.getcwd(), "robot_model/franka_panda/panda_model.urdf")
+        #robot_file_path = os.path.join(os.getcwd(), "robot_model/franka_panda/panda_model.urdf")
+        robot_file_path = os.path.join(os.getcwd(), "desktop/github/robotics/Project2/robot_model/franka_panda/panda_model.urdf")
         self.robot_id = p.loadURDF(robot_file_path,
                                    basePosition=self._base_position, useFixedBase=True, flags=flags,
                                    physicsClientId=self._physics_client_id)
