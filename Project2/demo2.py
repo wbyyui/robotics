@@ -11,8 +11,8 @@ from robot_env import *
 
 
 # for pick and place demo, use PICK_PLACE
-TESTING = "IK"
-# TESTING = "PICK_PLACE"
+# TESTING = "IK"
+TESTING = "PICK_PLACE"
 
 
 def IK_test(robot, physicsClientId):
