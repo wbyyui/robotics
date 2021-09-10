@@ -1,3 +1,4 @@
+
 import numpy as np
 import math
 import time
@@ -27,6 +28,8 @@ class SensorModel:
         self.Z_PSHORT = 0.01
         self.Z_PMAX = 0.03
         self.Z_PRAND = 100000
+        self.K = 180
+        self.eps = 1e-6
  
     def beam_range_finder_model(self, z_t1_arr, x_t1):
         """
@@ -41,12 +44,47 @@ class SensorModel:
 
         # get the z_t^{k_star} by the provided ray-casting algorithm:
         # here is an example:
-        # z_t_k_star = self.rayCast( -90, x_t1[2], x, y )
+        x = x_t1[0] + 25 * np.cos(x_t1[2])
+        y = x_t1[1] + 25 * np.sin(x_t1[2])
+        z_t_k_star = self.rayCast( -90, x_t1[2], x, y )
+
         # where x, y are the coordinations that need to be calculated by yourself 
         # according to the current location and \theta
         # (note there is a 25cm offset from agent to the laser sensor)
+
+        q = 0
+        for k in range(self.K):
+
+            # calculate p_hit
+
+            # calculate p_short
+
+            if z_t1_arr[k] >= 0 and z_t1_arr[k] <= z_t_k_star[k]:
+                p_short = self.P_SHORT_LAMBDA * np.exp(-self.P_SHORT_LAMBDA*z_t1_arr[k])
+                p_short = p_short / (1 - np.exp(-self.P_SHORT_LAMBDA*z_t_k_star[k]))
+            else:
+                p_short = 0
+
+            # calculate p_max
+
+            if z_t1_arr[k] >= self.Z_MAX - self.eps:
+                p_max = 1.0
+            else:
+                p_max = 0
+
+            # calculate p_rand
+
+            if z_t1_arr[k] >= 0 and z_t1_arr[k] < self.Z_MAX - self.eps:
+                p_rand = 1.0/self.Z_MAX
+            else:
+                p_rand = 0
+
+            # calculate p
+
+            p = self.Z_PHIT * p_hit + self.Z_PSHORT * p_short + self.Z_PMAX * p_max + self.Z_PRAND * p_rand
+            q = q*p
         
-        # return q
+        return q
 
 
     def rayCast(self, deg, ang, coord_x, coord_y):
